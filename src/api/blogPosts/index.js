@@ -4,7 +4,6 @@ import { extname } from "path";
 import createHttpError from "http-errors";
 
 const blogPostsRouter = express.Router();
-// MONGOOSE ENDPOINTS
 
 // POST
 

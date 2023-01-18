@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import CommentSchema from "../comments/model.js";
 
 const { Schema, model } = mongoose;
 
@@ -13,11 +14,7 @@ const blogPostSchema = new Schema(
     },
     content: { type: String, required: true },
     comments: [
-      {
-        name: { type: String, required: true },
-        text: { type: String, required: true },
-        commentDate: { type: Date, required: true },
-      },
+        CommentSchema,
     ],
   },
   {

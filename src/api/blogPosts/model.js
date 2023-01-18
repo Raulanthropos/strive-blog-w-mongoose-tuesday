@@ -19,7 +19,6 @@ const blogPostSchema = new Schema(
         commentDate: { type: Date, required: true },
       },
     ],
-    authors: [{ type: Schema.Types.ObjectId, ref: "Author" }],
   },
   {
     timestamps: true,

@@ -8,6 +8,7 @@ import {
   unauthorizedHandler,
 } from "./errorHandlers.js";
 import blogPostsRouter from "./api/blogPosts/index.js";
+import commentsRouter from './api/comments/index.js'
 import mongoose from "mongoose";
 import dotenv from "dotenv";
 
@@ -19,6 +20,7 @@ server.use(cors());
 server.use(express.json());
 
 server.use("/blogPosts", blogPostsRouter);
+server.use("/comments", commentsRouter);
 
 server.use(badRequestHandler);
 server.use(unauthorizedHandler);

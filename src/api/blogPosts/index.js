@@ -1,219 +1,111 @@
 import express from "express";
-import BlogPostModel from "./model.js";
-import CommentModel from "../comments/model.js";
 import createHttpError from "http-errors";
+import BlogsModel from "./model.js";
 import q2m from "query-to-mongo";
+import { basicAuthMiddleware } from "../../lib/basicAuth.js";
+import { adminOnlyMiddleware } from "../../lib/adminOnly.js";
 
-const blogPostsRouter = express.Router();
+const blogpostsRouter = express.Router();
 
-// MONGOOSE ENDPOINTS
+blogpostsRouter.get(
+  "/me/stories",
+  basicAuthMiddleware,
+  async (req, res, next) => {
+    try {
+      const blogs = await BlogsModel.find().populate({ path: "author" });
 
-// GET
-
-blogPostsRouter.get("/", async (req, res, next) => {
-  try {
-    const blogPosts = await BlogPostModel.find().populate({
-      path: "authors",
-      select: "name surname avatar",
-    });
-    res.send(blogPosts);
-  } catch (error) {
-    next(error);
-  }
-});
-
-// GET POSTS PAGINATION
-
-blogPostsRouter.get("/paginate", async (req, res, next) => {
-  try {
-    const mongoQuery = q2m(req.query);
-
-    const totalPosts = await BlogPostModel.countDocuments(mongoQuery.criteria);
-
-    const blogPosts = await BlogPostModel.find(
-      mongoQuery.criteria,
-      mongoQuery.options.fields
-    )
-      .skip(mongoQuery.options.skip)
-      .limit(mongoQuery.options.limit)
-      .sort(mongoQuery.options.sort)
-      .populate({ path: "authors", select: "name surname avatar" });
-
-    res.send({
-      links: mongoQuery.links("http://localhost:3001/blogPosts", totalPosts),
-      totalPosts,
-      totalPages: Math.ceil(totalPosts / mongoQuery.options.limit),
-      blogPosts,
-    });
-  } catch (error) {
-    next(error);
-  }
-});
- 
-// GET POSTS WITH AUTHOR
-
-blogPostsRouter.get("/", async (req, res, next) => {
-  try {
-    const mongoQuery = q2m(req.query);
-
-    const { blogPosts, total } = await BlogPostModel.findBlogPostsWithAuthors(
-      mongoQuery
-    );
-
-    res.send({
-      links: mongoQuery.links("http://localhost:3001/blogPosts", total),
-      total,
-      totalPages: Math.ceil(total / mongoQuery.options.limit),
-      blogPosts,
-    });
-  } catch (error) {
-    next(error);
-  }
-});
-
-// GET SPECIFIC
-
-blogPostsRouter.get("/:blogPostId", async (req, res, next) => {
-  try {
-    const blogPost = await BlogPostModel.findById(
-      req.params.blogPostId
-    ).populate({ path: "authors", select: "name surname avatar" });
-    if (blogPost) {
-      res.send(blogPost);
-    } else {
-      next(
-        createHttpError(404, `User with id ${req.params.blogPostId} not found`)
-      );
+      const allBlogs = blogs.filter((blog) => {
+        if (blog.author._id.toString() === req.author._id.toString()) {
+          return blog;
+        }
+      });
+      console.log(allBlogs);
+      console.log("header", req.author);
+      res.send(allBlogs);
+    } catch (error) {
+      next(error);
     }
-  } catch (error) {
-    next(error);
   }
-});
+);
 
-// GET SPECIFIC BY CATEGORY
-
-blogPostsRouter.get("/search/:category", async (req, res, next) => {
+blogpostsRouter.post("/", async (req, res, next) => {
   try {
-    console.log(req.params.category);
-    const blogPosts = await BlogPostModel.find({
-      category: `${req.params.category}`,
-    }).populate({ path: "authors", select: "name surname avatar" });
-    if (blogPosts) {
-      res.send(blogPosts);
-    } else {
-      next(
-        createHttpError(404, `User with id ${req.params.blogPostId} not found`)
-      );
-    }
-  } catch (error) {
-    next(error);
-  }
-});
-
-// POST
-
-blogPostsRouter.post("/", async (req, res, next) => {
-  try {
-    const newBlogPost = new BlogPostModel(req.body);
-    const { _id } = await newBlogPost.save();
-
+    const newBlog = new BlogsModel(req.body);
+    const { _id } = await newBlog.save();
     res.status(201).send({ _id });
   } catch (error) {
     next(error);
   }
 });
 
-// PUT
-
-blogPostsRouter.put("/:blogPostId", async (req, res, next) => {
+blogpostsRouter.get("/", async (req, res, next) => {
   try {
-    const updatedBlogPost = await BlogPostModel.findByIdAndUpdate(
-      req.params.blogPostId,
-      req.body,
-      { new: true, runValidators: true }
-    );
+    const blogs = await BlogsModel.find().populate({ path: "author" });
+    res.send(blogs);
+  } catch (error) {
+    next(error);
+  }
+});
 
-    if (updatedBlogPost) {
-      res.send(updatedBlogPost);
+blogpostsRouter.get("/:blogId", basicAuthMiddleware, async (req, res, next) => {
+  try {
+    const blog = await BlogsModel.findById(req.params.blogId).populate({
+      path: "author",
+      // select: "name email",
+    });
+    if (blog) {
+      res.send(blog);
     } else {
-      next(
-        createHttpError(404, `User with id ${req.params.blogPostId} not found`)
-      );
+      next(createHttpError(404, `Blog with id ${req.params.blogId} not found`));
     }
   } catch (error) {
     next(error);
   }
 });
 
-// DELETE
-
-blogPostsRouter.delete("/:blogPostId", async (req, res, next) => {
+blogpostsRouter.put("/:blogId", basicAuthMiddleware, async (req, res, next) => {
   try {
-    const deletedBlogPost = await BlogPostModel.findByIdAndDelete(
-      req.params.blogPostId
-    );
-    if (deletedBlogPost) {
-      res.status(204).send();
-    } else {
-      next(
-        createHttpError(404, `User with id ${req.params.blogPostId} not found`)
+    //get the blogpost
+    const searchedBlog = await BlogsModel.findById(req.params.blogId);
+    console.log(req.author);
+    console.log(searchedBlog);
+
+    if (searchedBlog.author.toString() === req.author._id.toString()) {
+      const updatedBlog = await BlogsModel.findByIdAndUpdate(
+        req.params.blogId, // WHO you want to modify
+        req.body, // HOW you want to modify
+        { new: true, runValidators: true }
       );
+
+      res.send(updatedBlog);
+    } else {
+      next(createHttpError(401, `unauthorzed, not your post`));
     }
+
+    //check blog author id with the one from authorization header
+
+    //if they are equal, update
   } catch (error) {
     next(error);
   }
 });
 
-// COMMENTS GET
-
-blogPostsRouter.get("/:blogPostId/comments", async (req, res, next) => {
-  try {
-    const blogPost = await BlogPostModel.findById(req.params.blogPostId);
-
-    if (blogPost) {
-      res.status(200).send(blogPost.comments);
-    } else {
-      next(
-        createHttpError(
-          404,
-          `No blog post with id ${req.params.blogPostId} found`
-        )
-      );
-    }
-  } catch (error) {
-    next(error);
-  }
-});
-
-// COMMENTS GET SPECIFIC
-
-blogPostsRouter.get(
-  "/:blogPostId/comments/:commentId",
+blogpostsRouter.delete(
+  "/:blogId",
+  basicAuthMiddleware,
   async (req, res, next) => {
     try {
-      const blogPost = await BlogPostModel.findById(req.params.blogPostId);
+      const deletedBlog = await BlogsModel.findByIdAndDelete(req.params.blogId);
 
-      if (blogPost) {
-        const selectedComment = blogPost.comments.find(
-          (comment) => comment._id.toString() === req.params.commentId
-        );
-
-        if (selectedComment) {
-          res.send(selectedComment);
+      if (deletedBlog) {
+        if (req.author._id.toString() === deletedBlog.author._id.toString()) {
+          res.status(204).send();
         } else {
-          next(
-            createHttpError(
-              404,
-              `No blog post with id ${req.params.blogPostId} found`
-            )
-          );
+          next(createHttpError(401, "it's not your post to delete"));
         }
       } else {
         next(
-          createHttpError(
-            404,
-            `No blog post with id ${req.params.blogPostId} found`
-          )
+          createHttpError(404, `Blog with id ${req.params.blogId} not found`)
         );
       }
     } catch (error) {
@@ -222,112 +114,130 @@ blogPostsRouter.get(
   }
 );
 
-// COMMENTS POST
+// ********************** Embedding comments into blogposts ************************
 
-blogPostsRouter.post("/:blogPostId/comments", async (req, res, next) => {
+blogpostsRouter.post("/:id", async (req, res, next) => {
   try {
-    const newCommentData = new CommentModel(req.body);
+    //in the req.body we will have the content of the comment we want to add
 
-    const newComment = {
-      ...newCommentData.toObject(),
-      commentDate: new Date(),
-    };
+    //we need to find the blog we want to update using the id from the params and update it with
+    //the comment from the req.body
 
-    const updatedBlogPost = await BlogPostModel.findByIdAndUpdate(
-      req.params.blogPostId,
-      { $push: { comments: newComment } },
-      { new: true, runValidators: true }
-    );
+    const searchedBlog = await BlogsModel.findById(req.params.id);
 
-    if (updatedBlogPost) {
-      res.send(updatedBlogPost);
-    } else {
-      next(
-        createHttpError(
-          404,
-          `No blog post with id ${req.params.blogPostId} found`
-        )
+    if (searchedBlog) {
+      const updatedBlog = await BlogsModel.findByIdAndUpdate(
+        req.params.id,
+        {
+          $push: {
+            comments: {
+              ...req.body,
+            },
+          },
+        },
+        { new: true, runValidators: true }
       );
+      res.send(updatedBlog);
+    } else {
+      next(createHttpError(404, `Blog with id ${req.params.id} not found`));
     }
   } catch (error) {
     next(error);
   }
 });
 
-// COMMENTS PUT
+blogpostsRouter.get("/:id/comments", async (req, res, next) => {
+  try {
+    const searchedBlog = await BlogsModel.findById(req.params.id);
 
-blogPostsRouter.put(
-  "/:blogPostId/comments/:commentId",
-  async (req, res, next) => {
-    try {
-      const blogPost = await BlogPostModel.findById(req.params.blogPostId);
-
-      if (blogPost) {
-        const selectedCommentIndex = blogPost.comments.findIndex(
-          (comment) => comment._id.toString() === req.params.commentId
-        );
-
-        console.log(selectedCommentIndex);
-
-        if (selectedCommentIndex !== -1) {
-          blogPost.comments[selectedCommentIndex] = {
-            ...blogPost.comments[selectedCommentIndex].toObject(),
-            ...req.body,
-          };
-
-          await blogPost.save();
-
-          res.send(blogPost);
-        } else {
-          next(
-            createHttpError(
-              404,
-              `No comment with id ${req.params.commentId} found, ${selectedCommentIndex}`
-            )
-          );
-        }
-      } else {
-        next(
-          createHttpError(
-            404,
-            `No blog post with id ${req.params.blogPostId} found`
-          )
-        );
-      }
-    } catch (error) {
-      next(error);
+    if (searchedBlog) {
+      res.send(searchedBlog.comments);
+    } else {
+      next(createHttpError(404, `Blog with id ${req.params.id} not found`));
     }
+  } catch (error) {
+    next(error);
   }
-);
+});
 
-// COMMENTS DELETE
+blogpostsRouter.get("/:id/comments/:commentId", async (req, res, next) => {
+  try {
+    const searchedBlog = await BlogsModel.findById(req.params.id);
 
-blogPostsRouter.delete(
-  "/:blogPostId/comments/:commentId",
-  async (req, res, next) => {
-    try {
-      const updatedBlogPost = await BlogPostModel.findByIdAndUpdate(
-        req.params.blogPostId,
-        { $pull: { comments: { _id: req.params.commentId } } },
-        { new: true }
+    if (searchedBlog) {
+      // console.log("searched blog", searchedBlog);
+      const searchedComment = searchedBlog.comments.find(
+        (comment) => comment._id.toString() === req.params.commentId
       );
 
-      if (updatedBlogPost) {
-        res.send(updatedBlogPost);
+      if (searchedComment) {
+        res.send(searchedComment);
       } else {
         next(
           createHttpError(
             404,
-            `No blog post with id ${req.params.blogPostId} found`
+            `Comment with id ${req.params.commentId} not found`
           )
         );
       }
-    } catch (error) {
-      next(error);
+    } else {
+      next(createHttpError(404, `Blog with id ${req.params.id} not found`));
     }
+  } catch (error) {
+    next(error);
   }
-);
+});
 
-// MONGOOSE ENDPOINTS END
+blogpostsRouter.put("/:id/comment/:commentId", async (req, res, next) => {
+  try {
+    const searchedBlog = await BlogsModel.findById(req.params.id);
+    //returns a mongoose document
 
-export default blogPostsRouter;
+    if (searchedBlog) {
+      const index = searchedBlog.comments.findIndex(
+        (comment) => comment._id.toString() === req.params.commentId
+      );
+
+      if (index !== -1) {
+        searchedBlog.comments[index] = {
+          ...searchedBlog.comments[index].toObject(),
+          ...req.body,
+        };
+
+        await searchedBlog.save();
+        res.send(searchedBlog);
+      } else {
+        next(
+          createHttpError(
+            404,
+            `Comment with id ${req.params.commentId} not found`
+          )
+        );
+      }
+    } else {
+      next(createHttpError(404, `Blog with id ${req.params.id} not found`));
+    }
+  } catch (error) {
+    next(error);
+  }
+});
+
+blogpostsRouter.delete("/:id/comment/:commentId", async (req, res, next) => {
+  try {
+    const updatedBlog = await BlogsModel.findByIdAndUpdate(
+      req.params.id,
+      { $pull: { comments: { _id: req.params.commentId } } },
+      { new: true }
+    );
+
+    if (updatedBlog) {
+      res.send(updatedBlog);
+    } else {
+      next(createHttpError(404, `Blog with id ${req.params.id} not found`));
+    }
+  } catch (error) {
+    next(error);
+  }
+});
+
+export default blogpostsRouter;

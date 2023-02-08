@@ -33,5 +33,5 @@ mongoose.connect(process.env.MONGO_URL);
 server.listen(port, () => {
     console.log("Mongoose connected!");
   console.table(listEndpoints(server));
-  console.log("Server is up and running on port " + port);
+  console.log("Server is up and running on port",port);
 });

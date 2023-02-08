@@ -20,6 +20,8 @@
   },
   "homepage": "https://github.com/Raulanthropos/strive-blog-w-mongoose-tuesday#readme",
   "dependencies": {
+    "atob": "^2.1.2",
+    "bcrypt": "^5.1.0",
     "cors": "^2.8.5",
     "dotenv": "^16.0.3",
     "express": "^4.18.2",

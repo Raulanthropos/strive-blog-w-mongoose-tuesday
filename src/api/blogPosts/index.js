@@ -4,6 +4,8 @@ import BlogsModel from "./model.js";
 import q2m from "query-to-mongo";
 import { basicAuthMiddleware } from "../../lib/basicAuth.js";
 import { adminOnlyMiddleware } from "../../lib/adminOnly.js";
+import { JWTAuthMiddleware } from "../../lib/jwtAuth.js";
+import { createAccessToken } from "../../lib/tools.js";
 
 const blogpostsRouter = express.Router();
 
@@ -47,7 +49,7 @@ blogpostsRouter.get("/", async (req, res, next) => {
   }
 });
 
-blogpostsRouter.get("/:blogId", basicAuthMiddleware, async (req, res, next) => {
+blogpostsRouter.get("/:blogId", JWTAuthMiddleware, async (req, res, next) => {
   try {
     const blog = await BlogsModel.findById(req.params.blogId).populate({
       path: "author",

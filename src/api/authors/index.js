@@ -2,6 +2,8 @@ import express from "express";
 import createHttpError from "http-errors";
 import AuthorsModel from "./model.js";
 import { basicAuthMiddleware } from "../../lib/basicAuth.js";
+import { JWTAuthMiddleware } from "../../lib/jwtAuth.js";
+import { createAccessToken } from "../../lib/tools.js";
 
 const authorsRouter = express.Router();
 
@@ -15,7 +17,7 @@ authorsRouter.post("/", async (req, res, next) => {
   }
 });
 
-authorsRouter.get("/", async (req, res, next) => {
+authorsRouter.get("/", JWTAuthMiddleware, async (req, res, next) => {
   try {
     const authors = await AuthorsModel.find();
     res.send(authors);
@@ -72,6 +74,29 @@ authorsRouter.delete("/:authorId", async (req, res, next) => {
       next(
         createHttpError(404, `Author with id ${req.params.authorId} not found`)
       );
+    }
+  } catch (error) {
+    next(error);
+  }
+});
+
+authorsRouter.post("/login", async (req, res, next) => {
+  try {
+    // 1. Obtain the credentials from req.body
+    const { email, password } = req.body;
+
+    // 2. Verify the credentials
+    const author = await AuthorsModel.checkCredentials(email, password);
+
+    if (author) {
+      // 3.1 If credentials are fine --> generate an access token (JWT) and send it back as a response
+      const payload = { _id: author._id, role: author.role };
+
+      const accessToken = await createAccessToken(payload);
+      res.send({ accessToken });
+    } else {
+      // 3.2 If credentials are NOT fine --> trigger a 401 error
+      next(createHttpError(401, "Credentials are not ok!"));
     }
   } catch (error) {
     next(error);

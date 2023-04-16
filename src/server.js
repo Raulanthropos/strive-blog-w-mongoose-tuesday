@@ -10,15 +10,23 @@ import {
 import blogPostsRouter from "./api/blogPosts/index.js";
 import mongoose from "mongoose";
 import authorsRouter from "./api/authors/index.js";
-import dotenv from 'dotenv';
-
-dotenv.config();
+import passport from "passport";
+// import googleStrategy from "./lib/auth/google.js";
 
 const server = express();
 const port = process.env.PORT || 3001;
 
-server.use(cors());
+// passport.use("google", googleStrategy)
+
+server.use(
+  cors({
+    origin: "*",
+    methods: ["GET", "POST", "PUT", "DELETE"],
+  })
+);
+  
 server.use(express.json());
+server.use(passport.initialize())
 
 server.use("/blogPosts", blogPostsRouter);
 server.use("/authors", authorsRouter);
@@ -31,7 +39,6 @@ server.use(genericServerErrorHandler);
 mongoose.connect(process.env.MONGO_URL);
 
 server.listen(port, () => {
-    console.log("Mongoose connected!");
   console.table(listEndpoints(server));
-  console.log("Server is up and running on port",port);
+  console.log("Server is up and running on port " + port);
 });

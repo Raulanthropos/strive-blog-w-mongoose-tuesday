@@ -1,6 +1,6 @@
 import mongoose from "mongoose";
 
-const { Schema } = mongoose;
+const { Schema, model } = mongoose;
 
 const commentSchema = new Schema(
   {
@@ -12,4 +12,4 @@ const commentSchema = new Schema(
   }
 );
 
-export default commentSchema;
+export default model("Comment", commentSchema);

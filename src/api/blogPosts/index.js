@@ -99,7 +99,7 @@ blogPostsRouter.get("/:blogPostId", async (req, res, next) => {
       res.send(blogPost);
     } else {
       next(
-        createHttpError(404, `User with id ${req.params.blogPostId} not found`)
+        createHttpError(404, `Blogpost with id ${req.params.blogPostId} not found`)
       );
     }
   } catch (error) {
@@ -119,7 +119,7 @@ blogPostsRouter.get("/search/:category", async (req, res, next) => {
       res.send(blogPosts);
     } else {
       next(
-        createHttpError(404, `User with id ${req.params.blogPostId} not found`)
+        createHttpError(404, `Blogpost with id ${req.params.blogPostId} not found`)
       );
     }
   } catch (error) {
@@ -159,7 +159,7 @@ blogPostsRouter.put(
         next(
           createHttpError(
             404,
-            `User with id ${req.params.blogPostId} not found`
+            `Blogpost with id ${req.params.blogPostId} not found`
           )
         );
       }
@@ -185,7 +185,7 @@ blogPostsRouter.delete(
         next(
           createHttpError(
             404,
-            `User with id ${req.params.blogPostId} not found`
+            `Blogpost with id ${req.params.blogPostId} not found`
           )
         );
       }
@@ -222,7 +222,7 @@ blogPostsRouter.post(
         next(
           createHttpError(
             404,
-            `User with id ${req.params.blogPostId} not found`
+            `Blogpost with id ${req.params.blogPostId} not found`
           )
         );
       }

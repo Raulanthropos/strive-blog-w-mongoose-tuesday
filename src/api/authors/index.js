@@ -9,6 +9,7 @@ import {
 } from "../../lib/auth/tools.js";
 import { JWTAuthMiddleware } from "../../lib/auth/jwtAuth.js";
 import passport from "passport";
+import jwt from "jsonwebtoken";
 
 const authorsRouter = express.Router();
 
@@ -156,10 +157,15 @@ authorsRouter.post("/", JWTAuthMiddleware, async (req, res, next) => {
 
 // PUT
 
+// Your code for handling the PUT request
 authorsRouter.put("/:authorId", JWTAuthMiddleware, async (req, res, next) => {
   try {
+    const token = req.headers.authorization.split(" ")[1]; // Extract the token from the "Authorization" header
+    const decodedToken = jwt.verify(token, process.env.JWT_SECRET); // Decode the token using your JWT_SECRET environment variable
+    const authorId = decodedToken.id; // Extract the user's ID from the decoded token
+
     const updatedAuthor = await AuthorModel.findByIdAndUpdate(
-      req.params.authorId,
+      authorId,
       req.body,
       { new: true, runValidators: true }
     );
@@ -168,13 +174,14 @@ authorsRouter.put("/:authorId", JWTAuthMiddleware, async (req, res, next) => {
       res.send(updatedAuthor);
     } else {
       next(
-        createHttpError(404, `User with id ${req.params.authorId} not found`)
+        createHttpError(404, `User with id ${authorId} not found`)
       );
     }
   } catch (error) {
     next(error);
   }
 });
+
 
 // DELETE
 

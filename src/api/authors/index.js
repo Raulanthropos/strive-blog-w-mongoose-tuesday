@@ -46,6 +46,32 @@ authorsRouter.get("/me", JWTAuthMiddleware, async (req, res, next) => {
   }
 });
 
+/*
+authorsRouter.get("/me", JWTAuthMiddleware, async (req, res, next) => {
+  try {
+    const author = await AuthorModel.findById(req.author._id).select('-password');
+
+    if (!author) {
+      return res.status(404).json({ message: 'Author not found' });
+    }
+
+    // Include the avatar field in the response
+    const authorData = {
+      _id: author._id,
+      name: author.name,
+      email: author.email,
+      avatar: author.avatar, // Include the avatar field here
+      // Include any other relevant author data
+    };
+
+    res.json(authorData);
+  } catch (error) {
+    next(error);
+  }
+});
+
+*/
+
 // GET ME STORIES
 
 authorsRouter.get("/me/stories", JWTAuthMiddleware, async (req, res, next) => {
@@ -64,7 +90,7 @@ authorsRouter.post("/register", async (req, res, next) => {
   try {
     const newAuthorPre = {
       ...req.body,
-      avatar: `https://ui-avatars.com/api/?name=${req.body.name}+${req.body.surname}`,
+      // avatar: `https://ui-avatars.com/api/?name=${req.body.name}+${req.body.surname}`,
     };
     const newAuthor = new AuthorModel(newAuthorPre);
     const { _id } = await newAuthor.save();

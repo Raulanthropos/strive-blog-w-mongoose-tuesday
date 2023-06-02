@@ -5,10 +5,9 @@ import AuthorsModel from "../../api/authors/model.js"
 export const JWTAuthMiddleware = async (req, res, next) => {
   console.log("JWTAuthMiddleware called")
   if (!req.headers.authorization) {
-  next(createHttpError(401, "Please provide Bearer Token in the authorization header"))
+    next(createHttpError(401, "Please provide Bearer Token in the authorization header"))
   } else {
-    try {
-        
+    try {     
       const accessToken = req.headers.authorization.replace("Bearer ", "")
       console.log("accessToken within the jwt", accessToken);
       const payload = await verifyAccessToken(accessToken)
@@ -23,21 +22,22 @@ export const JWTAuthMiddleware = async (req, res, next) => {
       if (!author) {
         return next(createHttpError(404, "Author not found"))
       }
-      if (payload._id !== author._id.toString()) {
+
+      req.author.role = author.role;
+      console.log("Middleware completed successfully");
+      
+      if (req.baseUrl === "/blogPosts" && req.params.authorId && req.params.authorId !== req.author._id.toString()) {
         return next(createHttpError(401, "You are not authorized to perform this action on this author."))
       }
 
-      req.author.role = author.role;
-      req.author._id = author.id;
-      console.log("Middleware completed successfully");
       next();
-
     } catch (error) {
       console.log("This is where we get", error);
       next(createHttpError(401, "Token not valid!"))
     }
   }
 }
+
 
 //       let authorIndex = null;
     

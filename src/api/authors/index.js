@@ -188,8 +188,7 @@ authorsRouter.put("/:authorId", JWTAuthMiddleware, async (req, res, next) => {
   try {
     const token = req.headers.authorization.split(" ")[1]; // Extract the token from the "Authorization" header
     const decodedToken = jwt.verify(token, process.env.JWT_SECRET); // Decode the token using your JWT_SECRET environment variable
-    const authorId = decodedToken.id; // Extract the user's ID from the decoded token
-
+    const authorId = req.params.authorId; // Extract the user's ID from the URL parameter
     const updatedAuthor = await AuthorModel.findByIdAndUpdate(
       authorId,
       req.body,

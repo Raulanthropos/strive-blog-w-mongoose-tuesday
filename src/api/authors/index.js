@@ -15,25 +15,25 @@ const authorsRouter = express.Router();
 
 // AUTH GOOGLE
 
-authorsRouter.get(
-  "/auth/google",
-  passport.authenticate("google", { scope: ["profile", "email"] })
-);
+// authorsRouter.get(
+//   "/auth/google",
+//   passport.authenticate("google", { scope: ["profile", "email"] })
+// );
 
-// AUTH GOOGLE CALLBACK
+// // AUTH GOOGLE CALLBACK
 
-authorsRouter.get(
-  "/auth/googleRedirect",
-  passport.authenticate("google", { session: false }),
-  async (req, res, next) => {
-    const { accessToken } = req.user.tokens;
-    res.redirect(`${process.env.FE_URL}/home?token=${accessToken}`);
-    try {
-    } catch (error) {
-      next(error);
-    }
-  }
-);
+// authorsRouter.get(
+//   "/auth/googleRedirect",
+//   passport.authenticate("google", { session: false }),
+//   async (req, res, next) => {
+//     const { accessToken } = req.user.tokens;
+//     res.redirect(`${process.env.FE_URL}/home?token=${accessToken}`);
+//     try {
+//     } catch (error) {
+//       next(error);
+//     }
+//   }
+// );
 
 // GET ME
 

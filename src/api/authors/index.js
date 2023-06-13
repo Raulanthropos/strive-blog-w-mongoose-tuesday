@@ -10,9 +10,33 @@ import {
 import { JWTAuthMiddleware } from "../../lib/auth/jwtAuth.js";
 import passport from "passport";
 import jwt from "jsonwebtoken";
+import multer from "multer";
+import { fileURLToPath } from "url";
+import { dirname, join } from "path";
 
 const authorsRouter = express.Router();
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, "uploads/");
+  },
+  filename: function (req, file, cb) {
+    const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
+    const fileExtension = file.originalname.split(".").pop();
+    cb(null, file.fieldname + "-" + uniqueSuffix + "." + fileExtension);
+  },
+});
 
+const upload = multer({
+  storage: storage,
+  limits: {
+    fileSize: 2048 * 2048 * 5, // 5 MB
+  },
+});
+
+// Set the destination directory for uploaded files
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+// const upload = multer({ dest: join(__dirname, "uploads") });
 // AUTH GOOGLE
 
 // authorsRouter.get(
@@ -86,11 +110,13 @@ authorsRouter.get("/me/stories", JWTAuthMiddleware, async (req, res, next) => {
 
 // REGISTER
 
-authorsRouter.post("/register", async (req, res, next) => {
+authorsRouter.post("/register", upload.single("avatar"), async (req, res, next) => {
+  console.log("Destination path:", req.file.destination); // Log the destination path
+  console.log("Uploaded file:", req.file); // Log the uploaded file object
   try {
     const newAuthorPre = {
       ...req.body,
-      // avatar: `https://ui-avatars.com/api/?name=${req.body.name}+${req.body.surname}`,
+      avatar: req.file ? req.file.filename : undefined, // Save the uploaded file's filename in the database if it exists
     };
     const newAuthor = new AuthorModel(newAuthorPre);
     const { _id } = await newAuthor.save();
@@ -100,6 +126,7 @@ authorsRouter.post("/register", async (req, res, next) => {
     next(error);
   }
 });
+
 
 // LOGIN
 

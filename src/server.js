@@ -11,12 +11,18 @@ import blogPostsRouter from "./api/blogPosts/index.js";
 import mongoose from "mongoose";
 import authorsRouter from "./api/authors/index.js";
 import passport from "passport";
-// import googleStrategy from "./lib/auth/google.js";
+import path from "path";
+import { fileURLToPath } from "url";
+import { dirname, join } from "path";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
+// passport.use("google", googleStrategy)
+const uploadsFolder = path.resolve(__dirname, '..', 'uploads');
 
 const server = express();
 const port = process.env.PORT || 3001;
-
-// passport.use("google", googleStrategy)
 
 server.use(
   cors({
@@ -24,10 +30,10 @@ server.use(
     methods: ["GET", "POST", "PUT", "DELETE"],
   })
 );
-  
+
 server.use(express.json());
 server.use(passport.initialize())
-
+server.use('/uploads', express.static(join(__dirname, "../uploads")));
 server.use("/blogPosts", blogPostsRouter);
 server.use("/authors", authorsRouter);
 

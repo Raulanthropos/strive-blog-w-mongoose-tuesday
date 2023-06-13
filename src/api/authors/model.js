@@ -40,9 +40,9 @@ authorSchema.methods.toJSON = function () {
   delete author.updatedAt;
   delete author.__v;
   delete author.refreshToken;
-
   return author;
 };
+
 
 authorSchema.static("checkCredentials", async function (email, password, req) {
   const author = await this.findOne({ email });
